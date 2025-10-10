@@ -1,73 +1,117 @@
-# React + TypeScript + Vite
+# 핵심 기획 구조
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 게임 루프
 
-Currently, two official plugins are available:
+플레이어(눈사람)가 자동으로 앞으로 이동
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+점프 또는 중력 반전으로 장애물 회피
 
-## React Compiler
+전진할수록 눈사람 크기 증가 (점수 기반)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+장애물 충돌 시 크기 절반 감소
 
-## Expanding the ESLint configuration
+작아지면 다시 회복 가능 (눈을 굴리거나 아이템 획득)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 게임 목표
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+최대한 오래 살아남아 “가장 거대한 눈사람” 기록 세우기.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 화면 구성
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+배경(눈밭) + 전경(플레이어) + 장애물 + 점수 UI.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+# 물리적/시각적 시스템 정의
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 크기 변화 로직
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+점수 증가 → scale += 0.01
+
+충돌 시 → scale \*= 0.5
+
+특정 scale 이상 시 이동속도 조정(speed -= scale \* 0.2)
+
+## 점프 및 중력 로직
+
+기본 중력: gravity = 0.5
+
+점프 시: velocityY = -10
+
+React에서 requestAnimationFrame으로 물리 갱신.
+
+## 장애물 생성 로직
+
+일정 프레임 간격마다 Math.random()으로 y좌표, 속도 랜덤.
+
+collisionCheck(player, obstacle) 충돌 감지 → 눈 크기 감소.
+
+## 점수 시스템
+
+매 프레임 이동 시 score += deltaTime
+
+scale과 연동: scale = 1 + score / 1000.
+
+# 기술 스택 및 개발 환경 세팅
+
+React + Vite + TypeScript
+
+## 애니메이션 엔진
+
+requestAnimationFrame 기반 또는 react-spring / framer-motion
+
+TODO:
+
+## 물리엔진 선택
+
+단순: useState + canvas 충돌 감지
+
+고급: matter-js
+
+## 렌더링 방식
+
+2D 버전: <canvas> 기반 (가볍고 모바일 적합)
+
+3D 버전: react-three-fiber (눈 덩이 질감 표현 가능)
+
+## 개발 단계 플로우
+
+Canvas 세팅 — 배경/캐릭터/장애물 그리기
+
+게임 루프 구현 — 이동·중력·충돌·점수 갱신
+
+눈 크기 변화 반영 — scale 값에 따라 sprite 크기 조정
+
+UI 및 점수 표시 — React state와 연결
+
+충돌/감속/패널티 처리 — 눈 크기 반감 애니메이션
+
+모바일 터치 조작 추가 — tap → jump
+
+사운드 추가 — 점프, 충돌, 성장 효과음
+
+테스트 및 튜닝 — 난이도 곡선, 성능 확인
+
+프로토타입 완성 후 → Snowball 성장 곡선 및 UI polishing.
+
+```md
+src/
+├─ app/
+│ ├─ Layout.tsx
+│ ├─ main.tsx
+│ └─ providers/
+│ &nbsp; └─ store-provider.tsx
+├─ pages/
+│ └─ game/
+│ &nbsp; └─ GamePage.tsx
+├─ entities/
+│ ├─ snowman/
+│ │ ├─ model/types.ts
+│ │ ├─ model/useSnowman.ts
+│ │ └─ ui/Snowman.tsx
+│ └─ world/
+│ &nbsp; ├─ model/useWorld.ts
+│ &nbsp; └─ ui/World.tsx
+├─ shared/
+│ ├─ config/constants.ts
+│ └─ types.ts
+└─ app.css
 ```
