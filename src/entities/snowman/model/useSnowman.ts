@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { GAME } from "@shared/config/constants";
+import { BASE, GAME } from "@shared/config/constants";
 import type { SnowmanModel } from "./types";
 
 type SnowmanState = SnowmanModel & {
@@ -11,23 +11,24 @@ type SnowmanState = SnowmanModel & {
   aabb: () => { x: number; y: number; w: number; h: number };
 };
 
-const BASE_W = 56;
-const BASE_H = 26;
+const BASE_W = 16; // 눈사람 기본 너비
+const BASE_H = 24; // 기본 높이
 
 export const useSnowman = create<SnowmanState>((set, get) => ({
-  pos: { x: 80, y: GAME.GROUND_Y - BASE_H },
+  pos: { x: Math.floor(BASE.W * 0.33), y: GAME.GROUND_Y },
   velY: 0,
   scale: 1,
   width: BASE_W,
   height: BASE_H,
   onGround: true,
-  init: () =>
+  init: () => {
     set({
-      pos: { x: 120, y: GAME.GROUND_Y - BASE_H },
+      pos: { x: Math.floor(BASE.W * 0.33), y: GAME.GROUND_Y },
       velY: 0,
       scale: 1,
       onGround: true,
-    }),
+    });
+  },
   applyGravity: (dt) => {
     const st = get();
     let velY = st.velY + GAME.GRAVITY * dt;
@@ -63,8 +64,10 @@ export const useSnowman = create<SnowmanState>((set, get) => ({
   },
   aabb: () => {
     const st = get();
-    const w = st.width * st.scale;
-    const h = st.height * st.scale;
-    return { x: st.pos.x, y: st.pos.y, w, h };
+    const w = Math.round(st.width * st.scale);
+    const h = Math.round(st.height * st.scale);
+    const xLeft = Math.round(st.pos.x - w / 2);
+    const yTop = Math.round(st.pos.y - h);
+    return { x: xLeft, y: yTop, w, h };
   },
 }));

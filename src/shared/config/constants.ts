@@ -1,10 +1,15 @@
+export const BASE = {
+  W: 360,
+  H: 640,
+} as const;
+
 export const GAME = {
   /** px/s^2 */
   GRAVITY: 2200,
   /** px/s (위로 마이너스) */
   JUMP_VELOCITY: -900,
   /** 바닥 y */
-  GROUND_Y: 520,
+  GROUND_Y: Math.floor(BASE.H * 0.75),
   /** 장애물 왼쪽 이동 속도(px/s) */
   BASE_SPEED: 280,
   /** 장애물 생성 간격(초) */
