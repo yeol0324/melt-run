@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { GAME } from "@shared/config/constants";
+import { GAME, HIT } from "@shared/config/constants";
 import { createLoop } from "@shared/lib/loop";
 import {
   useWorld,
@@ -15,6 +15,7 @@ import {
   type Obstacle,
 } from "@entities/obstacle";
 import { useSnowman, drawSnowman } from "@entities/snowman";
+import { aabbIntersect } from "@shared/lib/physics";
 
 export const GamePage = () => {
   const viewW = 360;
@@ -49,6 +50,25 @@ export const GamePage = () => {
       }
 
       obsRef.current = moveObstacles(obsRef.current, dt, w.speed);
+
+      // 충돌 체크
+      const saabb = snow.aabb();
+      const now = w.time;
+      if (!snow.isInvincible(now)) {
+        for (const o of obsRef.current) {
+          const oaabb = { x: o.x, y: o.y, w: o.w, h: o.h };
+          if (aabbIntersect(saabb, oaabb)) {
+            console.log("충돌~!~!");
+
+            snow.halve();
+            snow.onHit(now);
+            snow.knockback(HIT.KNOCKBACK_PX);
+            useWorld.getState().addScore(-HIT.SCORE_PENALTY);
+
+            break;
+          }
+        }
+      }
 
       // 스케일 반영
       const baseScale = 1 + w.score * GAME.GROWTH_PER_SCORE;

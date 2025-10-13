@@ -3,6 +3,12 @@ export const BASE = {
   H: 640,
 } as const;
 
+export const HIT = {
+  /**무적 Time*/ COOLDOWN: 0.8,
+  KNOCKBACK_PX: 6,
+  SCORE_PENALTY: 15,
+} as const;
+
 export const GAME = {
   /** px/s^2 */
   GRAVITY: 2200,
