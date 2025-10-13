@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import {
+  useWorld,
+  drawBackground,
   WorldCanvas,
   type WorldCanvasHandle,
-} from "@entities/world/ui/WorldCanvas";
-import { useWorld } from "@entities/world/model/useWorld";
-import { useSnowman } from "@entities/snowman/model/useSnowman";
-import { drawSnowman } from "@entities/snowman/render";
-import { drawBackground } from "@entities/world/render";
+} from "@entities/world";
+import { useSnowman, drawSnowman } from "@entities/snowman";
 import { GAME } from "@shared/config/constants";
 import { createLoop } from "@shared/lib/loop";
 

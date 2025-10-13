@@ -1,15 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { setupPixelCanvas } from "@shared/lib/pixel-canvas";
 import { BASE } from "@shared/config/constants";
-
-export type WorldCanvasHandle = {
-  offCtx: CanvasRenderingContext2D;
-  present: () => void;
-  BASE_W: number;
-  BASE_H: number;
-  scale: number;
-  resize: (w: number, h: number) => void;
-};
+import type { WorldCanvasHandle } from "../model/types";
 
 export const WorldCanvas = React.forwardRef<
   WorldCanvasHandle,
