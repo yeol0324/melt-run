@@ -2,8 +2,12 @@ export function drawSnowman(
   ctx: CanvasRenderingContext2D,
   bottomX: number,
   bottomY: number,
-  scale: number
+  scale: number,
+  tSec: number,
+  inv: boolean
 ) {
+  if (inv && Math.floor(tSec * 10) % 2 === 0) return;
+
   const w = (16 * scale) | 0;
   const h = (24 * scale) | 0;
   const x = bottomX - (w >> 1);

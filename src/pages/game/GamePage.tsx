@@ -58,7 +58,7 @@ export const GamePage = () => {
         for (const o of obsRef.current) {
           const oaabb = { x: o.x, y: o.y, w: o.w, h: o.h };
           if (aabbIntersect(saabb, oaabb)) {
-            console.log("충돌~!~!");
+            console.log("충돌!!!");
 
             snow.halve();
             snow.onHit(now);
@@ -84,7 +84,8 @@ export const GamePage = () => {
       const sm = useSnowman.getState();
       const smx = Math.floor(sm.pos.x);
       const smy = Math.floor(sm.pos.y + sm.height * sm.scale);
-      drawSnowman(ctx, smx, smy, sm.scale);
+      const inv = useSnowman.getState().isInvincible(w.time);
+      drawSnowman(ctx, smx, smy, sm.scale, w.time, inv);
 
       h.present();
     });

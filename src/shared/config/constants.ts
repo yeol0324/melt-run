@@ -4,7 +4,8 @@ export const BASE = {
 } as const;
 
 export const HIT = {
-  /**무적 Time*/ COOLDOWN: 0.8,
+  /**무적 Time*/
+  COOLDOWN: 0.8,
   KNOCKBACK_PX: 6,
   SCORE_PENALTY: 15,
 } as const;
