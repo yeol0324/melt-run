@@ -30,3 +30,18 @@ export const GAME = {
   /** 최대 크기 */
   SNOW_MAX_SCALE: 2.4,
 } as const;
+
+export const ICE = {
+  DURATION_MIN: 1.4,
+  DURATION_MAX: 3.2,
+  GRACE_EXTEND: 0.18,
+
+  JUMP_LOCK: 0.22,
+  INIT_VX: 34,
+  FRICTION: 0.99,
+
+  GAP_MIN: 2.5,
+  GAP_MAX: 4.5,
+
+  TELEGRAPH: 0.25,
+} as const;

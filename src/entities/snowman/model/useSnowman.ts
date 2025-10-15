@@ -1,9 +1,15 @@
 import { create } from "zustand";
-import { BASE, GAME, HIT } from "@shared/config/constants";
+import { BASE, GAME, HIT, ICE } from "@shared/config/constants";
+import { useWorld, type Surface } from "@entities/world";
 
 type SnowmanState = {
+  applyHorizontal(dt: number, surface: string): unknown;
   pos: { x: number; y: number };
   velY: number;
+
+  velX: number;
+  jumpLockUntil: number;
+
   scale: number;
   width: number;
   height: number;
@@ -21,6 +27,7 @@ type SnowmanState = {
   onHit: (tNow: number) => void;
   knockback: (px: number) => void;
 
+  onLand: (now: number, surface: Surface) => void;
   aabb: () => { x: number; y: number; w: number; h: number };
 };
 
@@ -30,6 +37,10 @@ const BASE_H = 24;
 export const useSnowman = create<SnowmanState>((set, get) => ({
   pos: { x: Math.floor(BASE.W * 0.33), y: GAME.GROUND_Y },
   velY: 0,
+
+  velX: 0,
+  jumpLockUntil: 0,
+
   scale: 1,
   width: BASE_W,
   height: BASE_H,
@@ -49,26 +60,55 @@ export const useSnowman = create<SnowmanState>((set, get) => ({
 
   applyGravity: (dt) => {
     const st = get();
-    let velY = st.velY + GAME.GRAVITY * dt;
-    let y = st.pos.y + velY * dt;
-
-    const groundY = GAME.GROUND_Y - st.height * st.scale;
-    let onGround = st.onGround;
-
-    if (y >= groundY) {
-      y = groundY;
-      velY = 0;
-      onGround = true;
+    let vy = st.velY + GAME.GRAVITY * dt;
+    let bottomY = st.pos.y + vy * dt;
+    if (bottomY >= GAME.GROUND_Y) {
+      if (!st.onGround) {
+        const now = useWorld.getState().time;
+        const surface = useWorld.getState().surface;
+        get().onLand(now, surface);
+        //TODO: 착지 효과음
+      }
+      bottomY = GAME.GROUND_Y;
+      vy = 0;
+      set({ pos: { x: st.pos.x, y: bottomY }, velY: 0, onGround: true });
     } else {
-      onGround = false;
+      set({ pos: { x: st.pos.x, y: bottomY }, velY: vy, onGround: false });
     }
-    set({ pos: { x: st.pos.x, y }, velY, onGround });
+  },
+
+  applyHorizontal: (dt, surface) => {
+    const st = get();
+    let vx = st.velX;
+
+    const dampIce = Math.pow(ICE.FRICTION, dt * 60);
+    const dampNorm = Math.pow(0.5, dt * 60);
+
+    vx *= surface === "ice" ? dampIce : dampNorm;
+
+    const nx = Math.max(8, Math.min(st.pos.x + vx * dt, BASE.W - 8));
+    set({ pos: { x: nx, y: st.pos.y }, velX: vx });
   },
 
   jump: () => {
     const st = get();
+    const now = useWorld.getState().time;
     if (!st.onGround) return;
+    if (now < st.jumpLockUntil) return;
     set({ velY: GAME.JUMP_VELOCITY, onGround: false });
+  },
+  onLand: (now, surface) => {
+    if (surface === "ice") {
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      set({ velX: dir * ICE.INIT_VX, jumpLockUntil: now + ICE.JUMP_LOCK });
+
+      const { iceUntil, surface: curSurface } = useWorld.getState();
+      if (curSurface === "ice" && iceUntil - now < ICE.GRACE_EXTEND) {
+        useWorld.setState({ iceUntil: now + ICE.GRACE_EXTEND });
+      }
+    } else {
+      set({ velX: 0, jumpLockUntil: 0 });
+    }
   },
 
   setScale: (s) => {

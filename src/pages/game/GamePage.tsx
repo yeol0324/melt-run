@@ -13,6 +13,7 @@ import {
   WorldCanvas,
   type WorldCanvasHandle,
 } from "@entities/world";
+import { updateIce } from "@features/ice";
 
 export const GamePage = () => {
   const viewW = 360;
@@ -36,9 +37,13 @@ export const GamePage = () => {
       const h = canvasRef.current;
       if (!h) return;
 
-      // 물리 업데이트
-      snow.applyGravity(dt);
       w.tick(dt);
+      updateIce(w.time);
+      const surface = useWorld.getState().surface;
+
+      const wasOnGround = useSnowman.getState().onGround;
+      snow.applyGravity(dt);
+      snow.applyHorizontal(dt, surface);
 
       // 스폰
       obsRef.current = updateSpawn(obsRef.current, h.BASE_W, GAME.GROUND_Y, dt);
@@ -46,12 +51,27 @@ export const GamePage = () => {
       // 충돌 체크
       const now = w.time;
       if (checkCollision(obsRef.current, now)) handleCollision(now);
+
+      const nowOnGround = useSnowman.getState().onGround;
+      if (!wasOnGround && nowOnGround) {
+        useSnowman.getState().onLand(w.time, surface);
+      }
+
       applyGrowth();
 
       // render
       const ctx = h.offCtx;
       ctx.clearRect(0, 0, h.BASE_W, h.BASE_H);
-      drawBackground(ctx, h.BASE_W, h.BASE_H, GAME.GROUND_Y);
+
+      const telegraph = useWorld.getState().iceTelegraph;
+      drawBackground(
+        ctx,
+        h.BASE_W,
+        h.BASE_H,
+        GAME.GROUND_Y,
+        surface,
+        telegraph
+      );
 
       for (const o of obsRef.current) drawObstacle(ctx, o);
 
