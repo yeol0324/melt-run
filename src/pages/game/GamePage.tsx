@@ -1,27 +1,25 @@
 import { useEffect, useRef } from "react";
-
-import { GAME, HIT } from "@shared/config/constants";
+import { GAME } from "@shared/config/constants";
 import { createLoop } from "@shared/lib/loop";
+import { drawObstacle, type Obstacle } from "@entities/obstacle";
+import { useSnowman, drawSnowman } from "@entities/snowman";
+import { checkCollision, handleCollision } from "@features/collision";
+import { applyGrowth } from "@features/growth";
+import { updateSpawn } from "@features/spawn";
+import { useJump, useJumpControl } from "@features/jump";
 import {
   useWorld,
   drawBackground,
   WorldCanvas,
   type WorldCanvasHandle,
 } from "@entities/world";
-import {
-  drawObstacle,
-  moveObstacles,
-  spawnObstacle,
-  type Obstacle,
-} from "@entities/obstacle";
-import { useSnowman, drawSnowman } from "@entities/snowman";
-import { aabbIntersect } from "@shared/lib/physics";
 
 export const GamePage = () => {
   const viewW = 360;
   const viewH = 640;
   const world = useWorld();
   const snow = useSnowman();
+  const { jump } = useJump();
 
   const canvasRef = useRef<WorldCanvasHandle>(null);
   const obsRef = useRef<Obstacle[]>([]);
@@ -43,36 +41,12 @@ export const GamePage = () => {
       w.tick(dt);
 
       // 스폰
-      if (w.time - w.lastSpawnAt > GAME.SPAWN_INTERVAL) {
-        const o = spawnObstacle(h.BASE_W, GAME.GROUND_Y);
-        obsRef.current = [...obsRef.current, o];
-        useWorld.setState({ lastSpawnAt: w.time });
-      }
-
-      obsRef.current = moveObstacles(obsRef.current, dt, w.speed);
+      obsRef.current = updateSpawn(obsRef.current, h.BASE_W, GAME.GROUND_Y, dt);
 
       // 충돌 체크
-      const saabb = snow.aabb();
       const now = w.time;
-      if (!snow.isInvincible(now)) {
-        for (const o of obsRef.current) {
-          const oaabb = { x: o.x, y: o.y, w: o.w, h: o.h };
-          if (aabbIntersect(saabb, oaabb)) {
-            console.log("충돌!!!");
-
-            snow.halve();
-            snow.onHit(now);
-            snow.knockback(HIT.KNOCKBACK_PX);
-            useWorld.getState().addScore(-HIT.SCORE_PENALTY);
-
-            break;
-          }
-        }
-      }
-
-      // 스케일 반영
-      const baseScale = 1 + w.score * GAME.GROWTH_PER_SCORE;
-      snow.setScale(baseScale);
+      if (checkCollision(obsRef.current, now)) handleCollision(now);
+      applyGrowth();
 
       // render
       const ctx = h.offCtx;
@@ -103,13 +77,7 @@ export const GamePage = () => {
   }, [world.phase]);
 
   // 입력
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.code === "Space" || e.code === "ArrowUp") snow.jump();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [snow]);
+  useJumpControl();
 
   return (
     <div className="w-full h-dvh flex items-center justify-center bg-slate-900">
@@ -140,7 +108,7 @@ export const GamePage = () => {
         </button>
         <button
           className="absolute bottom-4 right-4 pixel-font pixelated no-aa bg-white/80 text-black px-4 py-3 rounded"
-          onClick={useSnowman.getState().jump}
+          onClick={jump}
         >
           JUMP
         </button>
